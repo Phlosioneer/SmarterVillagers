@@ -7,13 +7,13 @@ import net.minecraft.entity.ai.brain.schedule.Schedule;
 import net.minecraft.entity.ai.brain.task.VillagerTasks;
 import net.minecraft.entity.merchant.villager.VillagerEntity;
 import net.minecraft.util.ResourceLocation;
-import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.event.RegistryEvent;
 import net.minecraftforge.event.entity.EntityJoinWorldEvent;
 import net.minecraftforge.eventbus.api.IEventBus;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
+import net.minecraftforge.fml.common.Mod.EventBusSubscriber;
 import net.minecraftforge.fml.event.lifecycle.FMLCommonSetupEvent;
 import net.minecraftforge.fml.event.lifecycle.FMLLoadCompleteEvent;
 import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
@@ -26,7 +26,9 @@ import net.minecraftforge.registries.RegistryBuilder;
 public class SmarterVillagers {
 
 	// Directly reference a log4j logger.
-	private static final Logger LOGGER = LogManager.getLogger();
+	public static final Logger LOGGER = LogManager.getLogger();
+
+	public static final ResourceLocation TASKS = new ResourceLocation("smartervillagers:tasks");
 
 	public SmarterVillagers() {
 		// Register the setup method for modloading
@@ -61,8 +63,9 @@ public class SmarterVillagers {
 	public static class RegistryEvents {
 		@SubscribeEvent
 		public static void onCreateRegistries(final RegistryEvent.NewRegistry event) {
-			@SuppressWarnings("unchecked")
-			IForgeRegistry<TaskEntry> taskReg = (IForgeRegistry<TaskEntry>) new RegistryBuilder<>()
+			IForgeRegistry<TaskEntry> taskReg = new RegistryBuilder<TaskEntry>()
+					.setName(TASKS)
+					.setType(TaskEntry.class)
 					.setDefaultKey(new ResourceLocation("minecraft:idle"))
 					.disableSaving()
 					.disableSync()
@@ -94,16 +97,24 @@ public class SmarterVillagers {
 		}
 	}
 
-	@Mod.EventBusSubscriber({Dist.DEDICATED_SERVER})
+	@EventBusSubscriber
 	public static class GameEvents {
 		@SubscribeEvent
 		public static void onEntitySpawn(final EntityJoinWorldEvent event) {
-			if (event.getEntity().getClass() != VillagerEntity.class) {
+			LOGGER.debug("Entity spawn detected: " + event.getEntity().getClass().getName());
+			if (!event.getEntity().getClass().equals(VillagerEntity.class)) {
 				return;
 			}
 			LOGGER.debug("Normal villager spawn blocked.");
 			event.setCanceled(true);
 
+			boolean success = event.getWorld().addEntity(new SmarterVillagerEntity((VillagerEntity) event.getEntity()));
+			if (success) {
+				LOGGER.debug("Entity added.");
+			} else {
+				LOGGER.debug("Failed to replace villager.");
+				// event.setCanceled(false);
+			}
 		}
 	}
 }

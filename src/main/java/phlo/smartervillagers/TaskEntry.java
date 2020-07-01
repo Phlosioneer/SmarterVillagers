@@ -3,7 +3,6 @@ package phlo.smartervillagers;
 import java.util.function.BiFunction;
 import com.google.common.collect.ImmutableList;
 import com.mojang.datafixers.util.Pair;
-import net.minecraft.entity.LivingEntity;
 import net.minecraft.entity.ai.brain.task.Task;
 import net.minecraft.entity.merchant.villager.VillagerData;
 import net.minecraft.entity.merchant.villager.VillagerEntity;
@@ -19,5 +18,9 @@ public class TaskEntry extends ForgeRegistryEntry<TaskEntry> {
 
 	public ImmutableList<Pair<Integer, ? extends Task<? super VillagerEntity>>> getTasks(VillagerData data, float movementSpeed) {
 		return tasks.apply(data, movementSpeed);
+	}
+
+	public BiFunction<VillagerData, Float, ImmutableList<Pair<Integer, ? extends Task<? super VillagerEntity>>>> getTaskFactory() {
+		return tasks;
 	}
 }
